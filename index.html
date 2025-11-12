@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connection Roulette</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+  :root {
+    --bg: #190b0f;
+    --bg2: #2b1820;
+    --accent: #ff90b3;
+    --accent2: #ffc4a1;
+    --text: #f5e9eb;
+    --muted: #cfa7b0;
+    --risk-bg: #2a0303;
+    --risk-accent: #ff0033;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: radial-gradient(circle at top, var(--bg2) 0%, var(--bg) 60%, #000 100%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+  }
+
+  .app {
+    width: min(880px, 100%);
+    background: rgba(25, 10, 16, .9);
+    border-radius: 1.75rem;
+    border: 1px solid rgba(255, 255, 255, .05);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, .4);
+    padding: 2rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 720px; /* lengthen the box */
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    gap: 1rem;
+  }
+
+  .filters {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 9999px;
+    padding: .35rem .9rem;
+    font-size: .7rem;
+    cursor: pointer;
+    transition: all .25s ease;
+    white-space: nowrap;
+  }
+
+  .filter-btn.active,
+  .filter-btn:hover {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: #1a0c10;
+    font-weight: 600;
+    box-shadow: 0 0 20px rgba(255, 144, 179, .35);
+  }
+
+  .wild-toggle {
+    border: 1px solid rgba(255, 144, 179, .4);
+  }
+
+  .wild-toggle:hover:not(.active) {
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+  }
+
+  .wild-toggle.active,
+  .wild-toggle.active:hover {
+    background: radial-gradient(circle at top, rgba(255, 144, 179, 1) 0%, rgba(255, 196, 161, 1) 100%);
+    color: #1a0c10;
+    box-shadow: 0 0 25px rgba(255, 144, 179, .55);
+  }
+
+  .card {
+    background: linear-gradient(150deg, rgba(35, 15, 22, .95), rgba(15, 5, 8, .9));
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+    border: 1px solid rgba(255, 255, 255, .05);
+    box-shadow: inset 0 0 35px rgba(255, 144, 179, .05);
+    min-height: 240px;
+    overflow: hidden;
+  }
+
+  .label {
+    text-transform: uppercase;
+    font-size: .65rem;
+    color: var(--muted);
+  }
+
+  .section {
+    font-weight: 600;
+    color: var(--accent2);
+    font-size: 1rem;
+  }
+
+  .round {
+    color: var(--muted);
+    font-size: .85rem;
+    margin-bottom: .5rem;
+  }
+
+  .question {
+    font-size: 1.3rem;
+    line-height: 1.5;
+    color: #fff;
+    text-shadow: 0 0 6px rgba(255, 255, 255, .25);
+  }
+
+  .spin-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 1.2rem;
+    gap: .75rem;
+  }
+
+  .btn-spin {
+    background: linear-gradient(100deg, var(--accent), var(--accent2));
+    color: #210b11;
+    font-weight: 600;
+    border: none;
+    border-radius: 1rem;
+    padding: .8rem 1.6rem;
+    cursor: pointer;
+    font-size: .95rem;
+    transition: all .2s ease;
+    box-shadow: 0 10px 30px rgba(255, 144, 179, .25);
+  }
+
+  .btn-spin:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 35px rgba(255, 144, 179, .4);
+  }
+
+  .count {
+    font-size: .75rem;
+    color: var(--muted);
+  }
+
+  footer {
+    text-align: center;
+    margin-top: auto; /* push footer to bottom */
+    font-size: .65rem;
+    color: var(--muted);
+    opacity: .6;
+    padding-top: 1.3rem;
+  }
+
+  /* centered risk widget just above footer (DESKTOP) */
+  .risk-launch {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 4.2rem; /* sits above footer */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .risk-label {
+    background: none;
+    border: none;
+    padding: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #ff2f4f;
+    cursor: pointer;
+    text-shadow: 0 0 9px rgba(255, 47, 79, 0.4);
+    line-height: 1;
+  }
+
+  #devilBtn {
+    background: none;
+    border: none;
+    font-size: 1.9rem;
+    line-height: 1;
+    cursor: pointer;
+    filter: drop-shadow(0 0 14px rgba(201, 94, 255, 0.6));
+    transition: transform 0.2s ease;
+  }
+
+  #devilBtn:hover,
+  .risk-label:hover {
+    transform: translateX(0) translateY(-1px);
+  }
+
+  /* RISK overlay – crimson, centred */
+  #riskModal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-items: center;
+    z-index: 999;
+    background: radial-gradient(circle at center, rgba(48, 0, 8, 0.98) 0%, rgba(9, 0, 0, 0.95) 75%);
+    backdrop-filter: blur(14px);
+    animation: fadeIn 0.25s ease forwards;
+  }
+
+  #riskModal.active {
+    display: grid;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  #riskModal .risk-panel {
+    background: rgba(26, 0, 6, 0.6);
+    border: 1px solid rgba(255, 144, 179, 0.2);
+    border-radius: 1.9rem;
+    max-width: 720px;
+    width: min(92%, 720px);
+    padding: 3rem 2.75rem;
+    text-align: center;
+    box-shadow: 0 0 45px rgba(255, 0, 60, 0.28);
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  #riskModal h2 {
+    font-size: clamp(2rem, 3vw, 2.4rem);
+    line-height: 1.05;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+
+  #riskModal p#riskAction {
+    color: rgba(245, 233, 235, 0.92);
+    line-height: 1.55;
+    font-size: 0.9rem;
+  }
+
+  #closeRisk {
+    align-self: center;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(120deg, #ff90b3 0%, #ffc4a1 100%);
+    color: #190b0f;
+    font-weight: 600;
+    padding: .55rem 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  #closeRisk:hover {
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 640px) {
+  .app {
+    position: relative;
+  }
+
+  /* footer stays at the very bottom */
+  footer {
+    margin-top: auto;
+  }
+
+  /* risk cluster floats above footer */
+  .risk-launch {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 3.6rem;  /* higher than footer so it's above it */
+    margin: 0;
+  }
+
+  .count {
+    margin-bottom: 1.6rem;
+  }
+
+  #devilBtn {
+    font-size: 1.7rem;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Connection Roulette</h1>
+        <p style="margin:0;font-size:0.75rem;color:var(--muted);">Playfully revealing, softly honest.</p>
+      </div>
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="spark">Spark / Desire</button>
+        <button class="filter-btn" data-filter="love">Daily Affection</button>
+        <button class="filter-btn" data-filter="repair">Repair & Safety</button>
+        <button class="filter-btn" data-filter="future">Future & Adventure</button>
+        <button class="filter-btn" data-filter="parenting">Parenting & Us</button>
+        <button class="filter-btn wild-toggle" id="edgeToggle">Include Wild Cards</button>
+      </div>
+    </header>
+
+    <div class="card" id="card">
+      <div class="label">Section</div>
+      <div class="section" id="section">Click spin to draw a card</div>
+      <div class="round" id="round"></div>
+      <div class="question" id="question">
+        You'll get one question at a time.
+      </div>
+    </div>
+
+    <div class="spin-area">
+      <button class="btn-spin" id="spinBtn">Spin a question</button>
+      <div class="count" id="count"></div>
+    </div>
+
+    <footer>© A space for connection, not performance.</footer>
+
+    <!-- bottom-right secret risk launcher -->
+    <div class="risk-launch">
+      <button class="risk-label" id="riskText">TAKE A RISK</button>
+      <button id="devilBtn" title="Ready for RISK?">😈</button>
+    </div>
+  </div>
+
+  <!-- overlay -->
+  <div id="riskModal">
+    <div class="risk-panel">
+      <h2>Ready for RISK?</h2>
+      <p id="riskAction"></p>
+      <button id="closeRisk">Return</button>
+    </div>
+  </div>
+
+  <script>
+    // ---- 20 thrill actions (unchanged) ----
+    const thrillDeck = [
+      "The Five-Minute Heat — Set a timer for five minutes. Kiss, touch, or tease, but you can’t go further. When the timer ends, stop, breathe, and look at each other. The point isn’t release; it’s to feel what builds when you hold back.",
+      "The Permission Game — One leads with touch. The other gives permission, one step at a time. Every touch must be invited, every boundary heard. It’s not about power; it’s about paying attention.",
+      "Audio Fantasy Drop — Record a short voice note that starts with ‘I’d find you…’ and ends with ‘and then I’d stop because I couldn’t take it anymore.’ Keep it under two minutes. No scripts, no edits, just tone and truth.",
+      "Stillness Game — Undress and stay in physical contact, skin to skin, for ten minutes without speaking. Just breathe and notice. When it ends, stay close and share what your body picked up that your mind usually misses.",
+      "Whisper Game — Go somewhere public, like a café or a park bench. Take turns whispering things you’d never say out loud. Keep your voices low, eyes forward. The goal isn’t to shock; it’s to feel the charge of secrecy and trust.",
+      "Mystery Script — One of you writes a short scene setup: a location, a mood, and the first line of dialogue. The other improvises what happens next. The only rule is to stay in character until one of you breaks with a laugh.",
+      "Sense Surrender — One partner wears a blindfold and headphones. The other begins with a slow kiss, then leads for five minutes using only touch, scent, and breath. End by helping them settle: a hand on their chest, a sip of water, a soft ‘you’re back.’",
+      "The Wordless Encounter — Choose a private space and agree: no words, no sounds, just body language and breath. Let one person lead or let it unfold naturally. When it ends, stay quiet for a moment longer, then speak the first word that feels true.",
+      "The Reveal — Each of you writes one sentence that begins, ‘What I haven’t told you about me is…’ Hand it over and let them read it silently. No reaction or commentary, just one slow touch to acknowledge what was shared.",
+      "Polarity Swap — For ten minutes, reverse your usual rhythm. The one who leads lets go, the one who follows takes charge. Exaggerate it just enough to feel strange. Keep it playful, not perfect. When it ends, share one word about how it felt.",
+      "Household Alchemy — Each of you secretly finds one ordinary object from around the house. Bring it back like an offering and show it to your partner. Then describe how you’d use it to turn them on, softly, creatively, or absurdly. No acting required unless inspiration takes over.",
+      "The Scene That Stuck — Share the most arousing thing you’ve ever seen or read, not something you’ve done. Explain why it stayed with you — the energy, the dynamic, the tension. The other just listens, no jokes, no analysis.",
+      "Touchscape — Choose one location, real or imagined, where you’d love to be touched. Describe the atmosphere: the light, the sound, the air, the feeling in your body. Your partner listens with eyes closed, picturing it. When you’re done, they tell you what they saw.",
+      "The Command Game — One person gives short, simple instructions: ‘stand up,’ ‘close your eyes,’ ‘come closer.’ The other can only respond with yes, no, or more. Keep it slow and intuitive, not about control, but about tuning in. Then switch.",
+      "The Song Experiment — Each of you secretly picks one song that quietly turns you on. Not explicit, just something that stirs your body. Play them back to back while staying close. No words, no instructions, just touch and eye contact. Let your bodies decide how to move, or not.",
+      "Reflection Play — Find a mirror and use it together, as if you were filming yourselves but only for the two of you. Watch, don’t perform. Let your eyes linger on the details: breath, reaction, the way pleasure shifts between you. The goal is arousal through attention, not performance.",
+      "The Pulse Project — Each of you creates a short playlist, three to five songs that capture how you want to be desired or that could score one of your fantasies. Play them in silence while staying close. When it ends, tell them what part of the fantasy or feeling each song touched.",
+      "The Edge Date — Go somewhere that makes you feel just a little exposed, like a quiet bar corner, a park bench at dusk, or an elevator after dinner. Stay close. Whisper things you shouldn’t say out loud. Let your hands almost meet. Then stop. Leave while the tension is still humming between you.",
+      "The Gaze Game — Describe one moment when being watched, or watching, made your body react. Tell them what the light was like, what you noticed, what it did to you. Keep it visual, not explicit. When you’re done, meet each other’s eyes and stay silent for ten slow seconds.",
+      "The Afterglow — Stay close for a while, no talking, just quiet contact. When it feels natural, describe one thing you learned tonight about how they respond to touch, sound, or attention. Keep it simple. Let it land. Then rest there a bit longer before moving on."
+    ];
+
+    // ---- 95 question deck (unchanged, same as your file) ----
+    const deck = [
+      // 1) Spark / Desire
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Warm-Up", tag: "spark", q: "What do you love most about how I make you feel day to day?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Warm-Up", tag: "spark", q: "What's one thing I do that makes you feel seen or sexy?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Warm-Up", tag: "spark", q: "What kind of compliments actually land for you (and which don’t)?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Warm-Up", tag: "spark", q: "What kind of physical touch feels best when you're tired or stressed?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Warm-Up", tag: "spark", q: "When do you feel most confident in your own skin?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Desire & Curiosity", tag: "spark", q: "When do you usually start to feel in the mood — what kind of day or vibe leads there?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Desire & Curiosity", tag: "spark", q: "What's something small that I do that turns you on (that you think I don't know about)?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Desire & Curiosity", tag: "spark", q: "What kind of environment makes sex feel exciting to you — slow, playful, new?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Desire & Curiosity", tag: "spark", q: "If you could tell me exactly how you'd like to be touched without judgment, what would you say?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "Desire & Curiosity", tag: "spark", q: "What helps you stay present in your body when we're intimate?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "The Play Zone", tag: "spark", q: "What's something you've wanted to try but haven't mentioned yet?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "The Play Zone", tag: "spark", q: "What's one thing I used to do (or say) that you secretly loved?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "The Play Zone", tag: "spark", q: "What kind of fantasy energy do you want more of — passion, teasing, tenderness, adventure?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "The Play Zone", tag: "spark", q: "What's your favourite way to start — and favourite way to end — a sexual encounter?" },
+      { section: "The Spark Questions (Desire & Intimacy)", round: "The Play Zone", tag: "spark", q: "If you could create a perfect evening together, what would it look like from start to finish?" },
+      // 2) How We Love
+      { section: "How We Love (Affection & Daily Connection)", round: "Baseline", tag: "love", q: "What kind of touch makes you feel instantly safe or calm?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Baseline", tag: "love", q: "What kind of touch makes you feel desired or excited?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Baseline", tag: "love", q: "When in the day do you most need physical affection?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Baseline", tag: "love", q: "What kind of quality time fills your cup fastest?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Baseline", tag: "love", q: "How do you like affection shown in public versus private?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Baseline", tag: "love", q: "What type of affection feels like too much or not enough?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Ideal Day", tag: "love", q: "What's your perfect morning together?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Ideal Day", tag: "love", q: "How would you love to reconnect after work or a long day?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Ideal Day", tag: "love", q: "If you could design our daily touch ritual, what would it look like?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Ideal Day", tag: "love", q: "What kind of words or gestures make you feel chosen, not just loved?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Ideal Day", tag: "love", q: "What does affection look like when we're at our best?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Practical", tag: "love", q: "What's one small thing I could do each day that would make you feel more connected?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Practical", tag: "love", q: "What's one thing I do now that lands the wrong way?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Practical", tag: "love", q: "How do you like me to show affection when we're around our daughter?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Practical", tag: "love", q: "How do we repair disconnection quickly when it happens?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Practical", tag: "love", q: "What kind of physical affection helps you feel emotionally safe again after conflict?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Growth", tag: "love", q: "What kind of relationship role models inspire you?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Growth", tag: "love", q: "What does affectionate mean to you, beyond touch?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Growth", tag: "love", q: "How do you want to feel seen by me in daily life?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Growth", tag: "love", q: "What would it look like for us to be more physically in sync?" },
+      { section: "How We Love (Affection & Daily Connection)", round: "Growth", tag: "love", q: "How do you want our daughter to see us love each other?" },
+      // 3) Repair & Safety
+      { section: "Repair & Safety", round: "Calm & Reassure", tag: "repair", q: "When we have tension, what helps you calm down fastest?" },
+      { section: "Repair & Safety", round: "Calm & Reassure", tag: "repair", q: "What kind of apology lands best for you — words, touch, action, or time?" },
+      { section: "Repair & Safety", round: "Calm & Reassure", tag: "repair", q: "What are the signs that you're starting to shut down in a conversation?" },
+      { section: "Repair & Safety", round: "Clean Communication", tag: "repair", q: "What's the best way for me to bring up a hard topic so you don't feel attacked?" },
+      { section: "Repair & Safety", round: "Clean Communication", tag: "repair", q: "In conflict, what do I do that actually helps you stay with me?" },
+      { section: "Repair & Safety", round: "Clean Communication", tag: "repair", q: "What makes you feel blamed or wrong even when I'm not trying to?" },
+      { section: "Repair & Safety", round: "Repair Rituals", tag: "repair", q: "What would a five-minute repair ritual look like for us after a disagreement?" },
+      { section: "Repair & Safety", round: "Repair Rituals", tag: "repair", q: "How can we disagree without it turning into disconnection?" },
+      { section: "Repair & Safety", round: "Repair Rituals", tag: "repair", q: "Is there a boundary you want me to hold even when you're upset?" },
+      { section: "Repair & Safety", round: "Repair Rituals", tag: "repair", q: "What's a phrase I can say that helps you feel 'we're good' again?" },
+      { section: "Repair & Safety", round: "Space or Closeness", tag: "repair", q: "When you're flooded, do you prefer space or closeness from me?" },
+      { section: "Repair & Safety", round: "Space or Closeness", tag: "repair", q: "Is there anything from our past we still need to close properly?" },
+      // 4) Future & Adventure
+      { section: "Future & Adventure", round: "Shared Experiences", tag: "future", q: "What’s an experience you really want us to have together in the next 12 months?" },
+      { section: "Future & Adventure", round: "Shared Experiences", tag: "future", q: "What kind of regular date rhythm would make you feel spoiled by us?" },
+      { section: "Future & Adventure", round: "Playful Energy", tag: "future", q: "What version of 'playful us' do you miss that we could bring back?" },
+      { section: "Future & Adventure", round: "Playful Energy", tag: "future", q: "If I wanted to plan a surprise for you, what vibe should I aim for?" },
+      { section: "Future & Adventure", round: "Travel / Getaways", tag: "future", q: "Where would you love a slow, no-rush weekend away with me?" },
+      { section: "Future & Adventure", round: "Intimacy Goals", tag: "future", q: "What does 'our intimacy got even better' look like to you in three months?" },
+      { section: "Future & Adventure", round: "Growth", tag: "future", q: "What's an area of the relationship you want us to get really good at?" },
+      { section: "Future & Adventure", round: "Vision", tag: "future", q: "When you picture us two years from now, what feels different in a good way?" },
+      { section: "Future & Adventure", round: "Vision", tag: "future", q: "Is there a creative or passion project you'd love us to do together?" },
+      { section: "Future & Adventure", round: "Declutter", tag: "future", q: "What's one thing we should stop doing because it kills the vibe?" },
+      { section: "Future & Adventure", round: "Family Adventures", tag: "future", q: "What kind of adventures do you want our daughter to see us having together?" },
+      { section: "Future & Adventure", round: "Home & Atmosphere", tag: "future", q: "If our home was designed to support intimacy, what would we change first?" },
+      { section: "Future & Adventure", round: "Upgrade", tag: "future", q: "What would make you go 'wow, we really levelled up our relationship'?" },
+      // 5) Parenting & Us
+      { section: "Parenting & Us", round: "Modelling Love", tag: "parenting", q: "How do you want our daughter to describe our relationship when she's older?" },
+      { section: "Parenting & Us", round: "Modelling Love", tag: "parenting", q: "What do you want her to learn about affection from watching us?" },
+      { section: "Parenting & Us", round: "Energy Management", tag: "parenting", q: "What time of day is actually realistic for us to connect as partners, not parents?" },
+      { section: "Parenting & Us", round: "Energy Management", tag: "parenting", q: "When you're in parent mode, what helps you shift back into 'us' mode?" },
+      { section: "Parenting & Us", round: "Support", tag: "parenting", q: "What kind of practical help from me makes you feel most loved as a parent?" },
+      { section: "Parenting & Us", round: "Support", tag: "parenting", q: "What parenting task drains you the most that I could pick up more often?" },
+      { section: "Parenting & Us", round: "Rituals", tag: "parenting", q: "What couple ritual do you want us to protect no matter how busy we get?" },
+      { section: "Parenting & Us", round: "Rituals", tag: "parenting", q: "How affectionate do you want us to be in front of her?" },
+      { section: "Parenting & Us", round: "Values", tag: "parenting", q: "What's one value about love or partnership you want her to absorb from us?" },
+      { section: "Parenting & Us", round: "Values", tag: "parenting", q: "What did your parents get right about affection that we should repeat?" },
+      { section: "Parenting & Us", round: "Values", tag: "parenting", q: "What did your parents get wrong about love that you never want repeated?" },
+      { section: "Parenting & Us", round: "Protection", tag: "parenting", q: "How do we make sure we don't become just co-parents?" },
+      { section: "Parenting & Us", round: "Future", tag: "parenting", q: "When she's a teenager, what do you hope she still sees in us?" },
+      { section: "Parenting & Us", round: "Future", tag: "parenting", q: "If we had one kid-free night a week, how would you want to spend it?" },
+      // 6) Wild Card / Edge
+      { section: "Wild Card: Desire & Edge", round: "Fantasies", tag: "edge", q: "What fantasy or scenario turns you on, even if you'd never act on it?" },
+      { section: "Wild Card: Desire & Edge", round: "Power & Energy", tag: "edge", q: "What kind of dominant or surrender energy from me turns you on the most?" },
+      { section: "Wild Card: Desire & Edge", round: "Permission Night", tag: "edge", q: "If I gave you full permission for one night, what would you want to explore?" },
+      { section: "Wild Card: Desire & Edge", round: "Body Focus", tag: "edge", q: "What’s a part of your body you’d love me to focus on more?" },
+      { section: "Wild Card: Desire & Edge", round: "Words", tag: "edge", q: "What’s one thing you’d love to hear whispered to you in bed?" },
+      { section: "Wild Card: Desire & Edge", round: "Reveal or Discover", tag: "edge", q: "Do you prefer being told what I want to do to you, or discovering it as it happens?" },
+      { section: "Wild Card: Desire & Edge", round: "Slow Burn", tag: "edge", q: "Describe your ideal slow-burn session with me — pace, energy, touch." },
+      { section: "Wild Card: Desire & Edge", round: "Just Us", tag: "edge", q: "If we could film one moment just for us, what kind of moment would it be?" },
+      { section: "Wild Card: Desire & Edge", round: "Thrill", tag: "edge", q: "What kind of public or semi-public situation secretly excites you?" },
+      { section: "Wild Card: Desire & Edge", round: "Rewrite", tag: "edge", q: "If you could rewrite our first night together, what would you change or amplify?" },
+      { section: "Wild Card: Desire & Edge", round: "Fantasy Builders", tag: "edge", q: "If you could choose a theme for a fantasy night — playful, romantic, rough, mysterious — which would you pick and why?" },
+      { section: "Wild Card: Desire & Edge", round: "Senses", tag: "edge", q: "Which of your senses is most tied to arousal, and how can I use it better?" },
+      { section: "Wild Card: Desire & Edge", round: "Tease", tag: "edge", q: "What kind of teasing drives you crazy in the best way?" },
+      { section: "Wild Card: Desire & Edge", round: "Memory Lane", tag: "edge", q: "Is there a moment from our past that still flashes through your mind when you’re turned on?" },
+      { section: "Wild Card: Desire & Edge", round: "Firsts", tag: "edge", q: "What’s something you’ve never done that still feels tempting?" },
+      { section: "Wild Card: Desire & Edge", round: "Tempo", tag: "edge", q: "Do you crave more intensity or more tenderness lately — and what would that look like physically?" },
+      { section: "Wild Card: Desire & Edge", round: "Voice", tag: "edge", q: "Would you rather hear what I want or be asked what you want while we’re in it?" },
+      { section: "Wild Card: Desire & Edge", round: "Roleplay", tag: "edge", q: "If we were to act out a fantasy persona for a night, who would you want to be?" },
+      { section: "Wild Card: Desire & Edge", round: "Afterglow", tag: "edge", q: "What helps you feel most connected after sex?" },
+      { section: "Wild Card: Desire & Edge", round: "Trust", tag: "edge", q: "What would make you feel completely free to express your desire without holding back?" }
+    ];
+
+    // DOM refs
+    const sectionEl = document.getElementById("section");
+    const roundEl = document.getElementById("round");
+    const questionEl = document.getElementById("question");
+    const countEl = document.getElementById("count");
+    const spinBtn = document.getElementById("spinBtn");
+    const card = document.getElementById("card");
+    const filterBtns = document.querySelectorAll(".filter-btn[data-filter]");
+    const edgeToggle = document.getElementById("edgeToggle");
+    const devilBtn = document.getElementById("devilBtn");
+    const riskText = document.getElementById("riskText");
+    const riskModal = document.getElementById("riskModal");
+    const riskAction = document.getElementById("riskAction");
+    const closeRisk = document.getElementById("closeRisk");
+
+    let currentFilter = "all";
+    let includeEdge = false;
+
+    const BASE_COUNT = deck.filter(d => d.tag !== "edge").length; // 75
+    const EDGE_COUNT = deck.length; // 95
+
+    function updateCountDisplay() {
+      countEl.textContent = (includeEdge ? EDGE_COUNT : BASE_COUNT) + " questions loaded";
+    }
+
+    function getFilteredDeck() {
+      let filtered;
+      if (currentFilter === "all") {
+        filtered = deck.filter(item => item.tag !== "edge");
+      } else {
+        filtered = deck.filter(item => item.tag === currentFilter);
+      }
+      if (includeEdge) {
+        filtered = filtered.concat(deck.filter(item => item.tag === "edge"));
+      }
+      return filtered;
+    }
+
+    function spin() {
+      const filtered = getFilteredDeck();
+      if (!filtered.length) return;
+      const index = Math.floor(Math.random() * filtered.length);
+      const item = filtered[index];
+      sectionEl.textContent = item.section;
+      roundEl.textContent = item.round;
+      questionEl.textContent = item.q;
+      card.classList.remove("spin-anim");
+      void card.offsetWidth;
+      card.classList.add("spin-anim");
+      // count stays 75/95 – no change here
+    }
+
+    spinBtn.addEventListener("click", spin);
+
+    // filter buttons
+    filterBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        filterBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentFilter = btn.dataset.filter;
+        sectionEl.textContent = "Filter: " + (currentFilter === "all" ? "All questions" : btn.textContent);
+        roundEl.textContent = "";
+        questionEl.textContent = "Click spin to draw from this set.";
+        updateCountDisplay(); // but still 75 or 95
+      });
+    });
+
+    // include wild cards toggle
+    edgeToggle.addEventListener("click", () => {
+      includeEdge = !includeEdge;
+      edgeToggle.classList.toggle("active", includeEdge);
+      updateCountDisplay();
+    });
+
+    // risk trigger (both text + icon)
+    function openRisk() {
+      const pick = thrillDeck[Math.floor(Math.random() * thrillDeck.length)];
+      riskAction.textContent = pick;
+      riskModal.classList.add("active");
+    }
+    devilBtn.addEventListener("click", openRisk);
+    riskText.addEventListener("click", openRisk);
+
+    closeRisk.addEventListener("click", () => {
+      riskModal.classList.remove("active");
+    });
+
+    // initial
+    updateCountDisplay();
+  </script>
+</body>
+</html>
